@@ -1,19 +1,24 @@
 {
+	a = 3;
+	b = 4;
+	c = 5;
+	temp = 0;
+	type = 0;
 	(a > b) ? {
 		temp = a;
 		a = b;
 		b = temp;
-	} : {}
+	} : {};
 	(b > c) ? {
 		temp = b;
 		b = c;
 		c = temp;
-	} : {}
+	} : {};
 	(a > b) ? {
 		temp = a;
 		a = b;
 		b = temp;
-	} : {}
+	} : {};
 
 	(a + b <= c) ? {
 		type = 1;
@@ -23,14 +28,13 @@
 				type = 4;
 			} : {
 				type = 3;
-			}
+			};
 		} : {
 			(b == c) ? {
 				type = 3;
 			} : {
 				type = 2;
-			}
-		}
-	}
+			};
+		};
+	};
 }
-		
