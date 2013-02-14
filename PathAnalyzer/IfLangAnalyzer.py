@@ -5,6 +5,7 @@ Created on 2013/01/08
 '''
 
 from ply.ply import lex, yacc
+import PathTree as pt
 
 fname = 'triangle_program.txt'
 
@@ -90,7 +91,10 @@ class Parser:
         self.lexer = Lexer()
         self.yacc_args = yacc_args
         self.parser = yacc.yacc(module=self, **yacc_args)
-        self.flag = True
+        self.root = pt.Program()
+        self.asgn_count = 0
+        self.cond_count = 0
+        self.block_count = 1
 
     def parse(self, source_text):
         return self.parser.parse(input=source_text, lexer=self.lexer)
@@ -113,7 +117,6 @@ class Parser:
         '''
         print 'block'
         p[0] = p[2]
-        self.flag = not self.flag
 
     def p_statement_array(self, p):
         '''
@@ -143,12 +146,9 @@ class Parser:
         assignment : VARIABLE ASSIGN expression
         '''
         print 'assignment'
-        if self.flag:
-            p[0] = p[3]
-            self.variables[p[1]] = p[3]
-            print self.variables
-        else:
-            print 'Flag is False'
+        cond = ' '.join([str(e) for e in p[1:]])
+        self.root.add_assignment(pt.Assignment(self.cond_count, cond))
+        self.cond_count += 1
 
     def p_expression(self, p):
         '''
@@ -157,13 +157,6 @@ class Parser:
             | term
         '''
         print 'expression'
-        if len(p) == 4:
-            if p[2] == '+':  # expression + term
-                p[0] = p[1] + p[3]
-            elif p[2] == '-':  # expression - term
-                p[0] = p[1] - p[3]
-        else:  # term
-            p[0] = p[1]
 
     def p_term(self, p):
         '''
@@ -172,24 +165,6 @@ class Parser:
             | factor
         '''
         print 'term'
-        if len(p) == 4:
-            if p[2] == '*':  # term * factor
-                p[0] = p[1] * p[3]
-            elif p[2] == '/':  # term / factor
-                p[0] = p[1] / p[3]
-        else:  # factor
-            p[0] = p[1]
-
-    def eval_var(self, arg):
-        '''
-        Evaluate the variable.
-        '''
-        if isinstance(arg, int):
-            return arg
-        elif isinstance(arg, str):
-            return self.variables[arg]
-        else:
-            raise TypeError
 
     def p_factor(self, p):
         '''
@@ -198,20 +173,12 @@ class Parser:
             | VARIABLE
         '''
         print 'factor'
-        if len(p) == 4:  # '(' expression ')'
-            p[0] = p[2]
-        else:  # INTEGER or VARIABLE
-            p[0] = self.eval_var(p[1])
 
     def p_if_statement(self, p):
         '''
         if_statement : LPAREN condition RPAREN QUESTION block COLON block
         '''
         print 'if_statement', p[2]
-        if p[2]:  # boolean value is true
-            p[0] = p[5]  # first block
-        else:  # false
-            p[0] = p[7]  # second block
 
     def p_condition(self, p):
         '''
@@ -223,22 +190,6 @@ class Parser:
             | expression NOTEQUAL expression
         '''
         print 'condition'
-        if p[2] == '==':
-            p[0] = p[1] == p[3]
-        elif p[2] == '>':
-            p[0] = p[1] > p[3]
-        elif p[2] == '<':
-            p[0] = p[1] < p[3]
-        elif p[2] == '>=':
-            p[0] = p[1] >= p[3]
-        elif p[2] == '<=':
-            p[0] = p[1] <= p[3]
-        elif p[2] == '!=':
-            p[0] = p[1] != p[3]
-        else:
-            raise Exception('Invalid character %s' % p[2])
-        self.flag = p[0]
-        print self.flag
 
 if __name__ == '__main__':
     input_text = ''
