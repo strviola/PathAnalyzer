@@ -1,12 +1,13 @@
 class Program:
-    def __init__(self):
-        self.block = Block(0)
-
-    def add_statement(self, stmt):
-        self.block.statements.append(stmt)
+    def __init__(self, block_list):
+        self.body = block_list
+        print 'Program tree is generated.'
 
     def to_executional_path(self):
         pass  # TODO: implement
+
+    def __str__(self):
+        return str(self.body)
 
 
 class Block:
@@ -26,7 +27,7 @@ class IfStatement:
         self.block_false = block_false
 
     def __str__(self):
-        return ('I%d: (%s)\n{%s}{%s}' % (self.number, self.condition,
+        return ('I%d: (%s)?{%s}:{%s}' % (self.number, self.condition,
                 str(self.block_true), str(self.block_false)))
 
 class Assignment:

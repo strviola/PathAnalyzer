@@ -86,15 +86,26 @@ class Lexer:
 class Parser:
     tokens = Lexer.tokens
     variables = {}
+    flag_root = 'root'
+    flag_true = 'true'
+    flag_false = 'false'
 
     def __init__(self, **yacc_args):
         self.lexer = Lexer()
         self.yacc_args = yacc_args
         self.parser = yacc.yacc(module=self, **yacc_args)
-        self.root = pt.Program()
+        self.root = 'Something error'
         self.asgn_count = 0
         self.cond_count = 0
         self.block_count = 1
+        self.asgn_buffer = []
+        self.stmt_buffer = []
+        self.block_temp = None
+        self.stmt_temp = None
+        self.block_temp_true = None
+        self.block_temp_false = None
+        self.if_flag = self.flag_root
+        self.condition = ''
 
     def parse(self, source_text):
         return self.parser.parse(input=source_text, lexer=self.lexer)
@@ -110,6 +121,9 @@ class Parser:
         '''
         print 'program'
         p[0] = p[1]
+        self.root = pt.Program(self.block_temp)
+        print self.root
+        # program operation
 
     def p_block(self, p):
         '''
@@ -117,6 +131,20 @@ class Parser:
         '''
         print 'block'
         p[0] = p[2]
+        temp_block = pt.Block(self.stmt_buffer)
+        print self.stmt_buffer
+        if self.if_flag == self.flag_root:
+            self.block_temp = temp_block
+            print 'block_temp'
+        elif self.if_flag == self.flag_true:
+            self.block_temp_true = temp_block
+            print 'b true'
+            self.if_flag = self.flag_false
+        elif self.if_flag == self.flag_false:
+            self.block_temp_false = temp_block
+            print 'b_false'
+            self.if_flag = self.flag_root
+        self.stmt_buffer = []
 
     def p_statement_array(self, p):
         '''
@@ -140,15 +168,16 @@ class Parser:
         '''
         print 'statement'
         p[0] = p[1]
+        self.stmt_buffer.append(self.stmt_temp)
 
     def p_assignment(self, p):
         '''
         assignment : VARIABLE ASSIGN expression
         '''
         print 'assignment'
-        cond = ' '.join([str(e) for e in p[1:]])
-        self.root.add_assignment(pt.Assignment(self.cond_count, cond))
-        self.cond_count += 1
+        stmt = ' '.join([str(e) for e in p[1:]])
+        self.stmt_temp = pt.Assignment(self.asgn_count, stmt)
+        self.asgn_count += 1
 
     def p_expression(self, p):
         '''
@@ -179,6 +208,8 @@ class Parser:
         if_statement : LPAREN condition RPAREN QUESTION block COLON block
         '''
         print 'if_statement', p[2]
+        self.stmt_buffer.append(pt.IfStatement(self.cond_count, self.condition,
+            self.block_temp_true, self.block_temp_false))
 
     def p_condition(self, p):
         '''
@@ -190,6 +221,8 @@ class Parser:
             | expression NOTEQUAL expression
         '''
         print 'condition'
+        self.condition = ' '.join(str(s) for s in p[1:])
+        self.if_flag = self.flag_true
 
 if __name__ == '__main__':
     input_text = ''
@@ -201,6 +234,4 @@ if __name__ == '__main__':
     t_lex.test(input_text)
     print
     print 'YACC test:'
-    import pprint
     t_yacc = Parser(write_tables=False, debug=False).parse(input_text)
-    pprint.pprint(t_yacc)
